@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Übung{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('main.exercises') }}">Zurück</a>
+<form class="training-form exercise-builder" method="post" data-existing="{{ '1' if exercise else '0' }}">
+  <section class="form-card">
+    <h1>{{ "Übung bearbeiten" if exercise else "Neue Übung" }}</h1>
+    <label>Name<input name="name" value="{{ exercise.name if exercise else '' }}" required></label>
+    <div class="split">
+      <label>Typ
+        <select name="type" id="exerciseType">
+          <option value="static" {{ "selected" if exercise and exercise.type == "static" else "" }}>Statisch</option>
+          <option value="dynamic" {{ "selected" if exercise and exercise.type == "dynamic" else "" }}>Dynamisch</option>
+        </select>
+      </label>
+      <label>Waffe
+        <select name="weapon_type" id="weaponType">
+          <option {{ "selected" if exercise and exercise.weapon_type == "Kurzwaffe" else "" }}>Kurzwaffe</option>
+          <option {{ "selected" if exercise and exercise.weapon_type == "Langwaffe" else "" }}>Langwaffe</option>
+        </select>
+      </label>
+    </div>
+    <div class="split">
+      <label>Distanz<input type="number" min="0" name="distance" value="{{ exercise.distance if exercise else 25 }}"></label>
+      <label>Schüsse<input type="number" min="1" name="shots_count" value="{{ exercise.shots_count if exercise else 18 }}"></label>
+    </div>
+    <label>Scheibe
+      <select name="target_id" id="targetSelect">
+        {% for target in targets %}
+          <option value="{{ target.id }}" data-category="{{ target.category }}" {{ "selected" if exercise and exercise.target_id == target.id else "" }}>{{ target.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="static-options">Ablauf
+      <select name="flow_type" id="flowType">
+        <option value="standard" {{ "selected" if not exercise or exercise.flow_type == "standard" else "" }}>Standard</option>
+        <option value="feldschiessen" {{ "selected" if exercise and exercise.flow_type == "feldschiessen" else "" }}>Feldschiessen</option>
+        <option value="obligatorisch" {{ "selected" if exercise and exercise.flow_type == "obligatorisch" else "" }}>Obligatorisches</option>
+      </select>
+    </label>
+    <label class="check-line"><input type="checkbox" name="is_favorite" {{ "checked" if exercise and exercise.is_favorite else "" }}> Favorit</label>
+  </section>
+
+  <section class="form-card static-options">
+    <h2>Scheibenwerte</h2>
+    <p class="notes" id="targetPreview">Werte werden aus dem Scheibenprofil geladen.</p>
+  </section>
+
+  <section class="form-card dynamic-options">
+    <h2>Dynamisches Scoring</h2>
+    <label>Methode
+      <select name="scoring_method_id" id="scoringMethod">
+        {% for key, preset in presets.items() %}
+          <option value="{{ key }}" data-category="{{ preset.category }}" {{ "selected" if exercise and exercise.scoring_method_id == key else "" }}>{{ preset.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <p class="notes" id="scoringHint">Scoring und Scheibe sind unabhängig.</p>
+  </section>
+
+  <section class="form-card">
+    <label>Beschreibung<textarea name="description" rows="4">{{ exercise.description if exercise else '' }}</textarea></label>
+    <button class="primary-action full" type="submit">Speichern</button>
+  </section>
+</form>
+{% if exercise %}
+  <form class="delete-form" action="{{ url_for('main.delete_exercise_route', exercise_id=exercise.id) }}" method="post">
+    <button class="danger-action" type="submit">Übung löschen</button>
+  </form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script id="targetsData" type="application/json">{{ targets|tojson }}</script>
+<script id="scoringData" type="application/json">{{ scoring_methods|tojson }}</script>
+<script src="{{ url_for('static', filename='js/exercise.js') }}"></script>
+{% endblock %}

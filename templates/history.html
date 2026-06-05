@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+<section class="section">
+  <h1>History</h1>
+  <div class="history-list">
+    {% for session in sessions %}
+      <a class="session-card" href="{{ url_for('main.run_detail', session_id=session.id) }}">
+        <div>
+          <strong>{{ session.date }}</strong>
+          <span>{{ session.exercise_name }} · {{ session.weapon_type }}</span>
+        </div>
+        <b>
+          {% if session.hit_factor is not none %}HF {{ "%.2f"|format(session.hit_factor) }}
+          {% elif session.final_time is not none %}{{ "%.2f"|format(session.final_time) }} s
+          {% elif session.total_score is not none %}{{ "%.0f"|format(session.total_score) }} P
+          {% else %}Run{% endif %}
+        </b>
+      </a>
+    {% else %}
+      <div class="empty">Noch keine Runs erfasst.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

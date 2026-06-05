@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Run erfassen{% endblock %}
+{% block content %}
+<form class="training-form" action="{{ url_for('main.run_form', exercise_id=exercise.id) }}" method="post" data-kind="{{ exercise.type }}" data-config='{{ exercise.scoring_config|tojson }}' data-static-values="{{ exercise.static_values|join(',') }}" data-flow='{{ exercise.flow_plan|tojson }}' data-input-mode="{{ exercise.scoring_config.input_mode or 'buttons' }}" data-min="{{ exercise.scoring_config.min or '' }}" data-max="{{ exercise.scoring_config.max or '' }}">
+  <input type="hidden" name="shots" id="shotsInput">
+  <input type="hidden" name="shot_entries_json" id="shotEntriesInput">
+  <section class="form-card">
+    <h1>{{ exercise.name }}</h1>
+    <label>Datum<input type="date" name="date" value="{{ current_date or '' }}" required></label>
+      <div class="detail-grid">
+        <div><small>Waffe</small><strong>{{ exercise.weapon_type }}</strong></div>
+        <div><small>Distanz</small><strong>{{ exercise.distance }} m</strong></div>
+        <div><small>Scheibe</small><strong>{{ exercise.target.name if exercise.target else exercise.target_type }}</strong></div>
+        <div><small>Schüsse</small><strong id="shotTarget">{{ exercise.shots_count }}</strong></div>
+        <div><small>Scoring</small><strong>{{ exercise.scoring_label }}</strong></div>
+      </div>
+  </section>
+
+  {% if exercise.type == "static" %}
+    <section class="form-card score-pad">
+      <div class="score-top">
+        <div><small>Abschnitt</small><strong id="phaseLabel">Start</strong></div>
+        <div><small>Erfasst</small><strong id="shotProgress">0 / {{ exercise.shots_count }}</strong></div>
+        <div><small>Total</small><strong id="staticTotal">0</strong></div>
+        <div><small>Prozent</small><strong id="staticPercent">0.0%</strong></div>
+      </div>
+      <div class="score-top" id="seriesProgressWrap" hidden>
+        <div><small>Aktuelle Serie</small><strong id="seriesProgress">0 / 5</strong></div>
+      </div>
+      {% if exercise.scoring_config.input_mode == "number_range" %}
+        <div class="split score-input-row">
+          <label>Trefferwert<input type="number" id="rangeScoreInput" min="{{ exercise.scoring_config.min }}" max="{{ exercise.scoring_config.max }}" value="{{ exercise.scoring_config.max }}"></label>
+          <button class="primary-action" type="button" id="addRangeScore">Treffer erfassen</button>
+        </div>
+      {% else %}
+        <div class="button-grid" id="scoreButtons">
+          {% for value in exercise.static_values %}
+            <button type="button" data-score="{{ value }}">{{ value|int if value == value|int else value }}</button>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <button class="secondary-action undo-action" type="button" id="undoShot">Letzten Treffer rückgängig</button>
+      <div class="shot-list" id="shotList"></div>
+    </section>
+  {% else %}
+    {% if exercise.scoring_config.result != "points" %}
+      <section class="form-card time-card">
+        <h2>Zeit</h2>
+        <label>Raw Time
+          <div class="time-input-wrap">
+            <input type="number" step="0.01" min="0" name="raw_time" id="rawTime" value="0" placeholder="2.50">
+            <span>s</span>
+          </div>
+        </label>
+        <div class="quick-time-row">
+          <button type="button" class="secondary-action compact" data-time-adjust="-0.10">-0.10</button>
+          <button type="button" class="secondary-action compact" data-time-adjust="0.10">+0.10</button>
+          <button type="button" class="secondary-action compact" id="clearRawTime">Clear</button>
+        </div>
+      </section>
+    {% else %}
+      <input type="hidden" name="raw_time" id="rawTime" value="0">
+    {% endif %}
+
+    <section class="form-card">
+      <h2>Treffer erfassen</h2>
+      {% set hit_zones = [] %}
+      {% set penalty_zones = [] %}
+      {% for zone, value in exercise.scoring_config.zones.items() %}
+        {% set key = exercise.scoring_config.zone_keys.get(zone, zone|lower|replace(' ', '_')|replace('-', '_')) if exercise.scoring_config.zone_keys else zone|lower|replace(' ', '_')|replace('-', '_') %}
+        {% if value < 0 or key in ["miss", "no_shoot", "non_threat"] %}
+          {% set _ = penalty_zones.append((zone, value, key)) %}
+        {% else %}
+          {% set _ = hit_zones.append((zone, value, key)) %}
+        {% endif %}
+      {% endfor %}
+      <div class="counter-groups">
+        <div class="counter-group">
+          <h3>Treffer</h3>
+          {% for zone, value, key in hit_zones %}
+            <div class="counter-row" data-shot-countable="{{ '0' if key in ['no_shoot', 'non_threat'] else '1' }}">
+              <div class="counter-info">
+                <strong>{{ zone }}</strong>
+                <span class="zone-meta">{% if exercise.scoring_config.result == "final_time" %}{% if value == 0 %}keine Strafe{% else %}+{{ value|int if value == value|int else value }}s{% endif %}{% else %}{{ value|int if value == value|int else value }} P{% endif %}</span>
+              </div>
+              <div class="counter-control">
+                <button type="button" class="counter-btn" data-counter-step="-1">-</button>
+                <input class="counter-value" type="number" min="0" inputmode="numeric" name="zone_{{ zone|lower|replace(' ', '_')|replace('-', '_') }}" value="0">
+                <button type="button" class="counter-btn" data-counter-step="1">+</button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% if penalty_zones %}
+          <div class="counter-group">
+            <h3>Strafen</h3>
+            {% for zone, value, key in penalty_zones %}
+              <div class="counter-row" data-shot-countable="{{ '0' if key in ['no_shoot', 'non_threat'] else '1' }}">
+                <div class="counter-info">
+                  <strong>{{ zone }}</strong>
+                  <span class="zone-meta penalty">{% if exercise.scoring_config.result == "final_time" %}+{{ value|int if value == value|int else value }}s{% else %}{{ value|int if value == value|int else value }} P{% endif %}</span>
+                </div>
+                <div class="counter-control">
+                  <button type="button" class="counter-btn" data-counter-step="-1">-</button>
+                  <input class="counter-value" type="number" min="0" inputmode="numeric" name="zone_{{ zone|lower|replace(' ', '_')|replace('-', '_') }}" value="0">
+                  <button type="button" class="counter-btn" data-counter-step="1">+</button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <p class="notes shot-warning" id="dynamicShotWarning" hidden></p>
+    </section>
+
+    <section class="form-card result-card">
+      <h2>Ergebnis</h2>
+      {% if exercise.scoring_config.result != "points" %}
+        <div class="score-top raw-time-summary">
+          <div><small>Raw Time</small><strong id="rawTimeSummary">0.00 s</strong></div>
+        </div>
+      {% endif %}
+      <div class="score-top">
+        <div><small id="primaryResultLabel">Ergebnis</small><strong id="dynamicPrimary">0</strong></div>
+        <div class="hf-tile" {% if exercise.scoring_config.result != "hit_factor" %}hidden{% endif %}><small>Hit Factor</small><strong id="hitFactor">0.00</strong></div>
+        <div class="time-tile" {% if exercise.scoring_config.result != "final_time" %}hidden{% endif %}><small>Penalty</small><strong id="penaltyTime">0.00 s</strong></div>
+      </div>
+      <p class="chart-note">{{ "Niedriger ist besser." if exercise.scoring_config.result == "final_time" else "Höher ist besser." }}</p>
+    </section>
+  {% endif %}
+
+  <section class="form-card">
+    <label>Notizen<textarea name="notes" rows="4"></textarea></label>
+    <button class="primary-action full" id="saveRun" type="submit">Run speichern</button>
+  </section>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/training.js') }}"></script>
+{% endblock %}

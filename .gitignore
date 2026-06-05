@@ -1,0 +1,50 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Flask/local runtime state
+instance/
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and local process files
+*.log
+*.pid
+
+# Build/package output
+build/
+dist/
+*.egg-info/
+
+# Node/frontend tooling if added later
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

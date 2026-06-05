@@ -1,0 +1,155 @@
+{
+  "targets": [
+    {
+      "id": "a10",
+      "name": "A10",
+      "category": "static",
+      "description": "Statische 10er-Scheibe",
+      "input_mode": "buttons",
+      "zones": [
+        { "label": "1", "value": 1 },
+        { "label": "2", "value": 2 },
+        { "label": "3", "value": 3 },
+        { "label": "4", "value": 4 },
+        { "label": "5", "value": 5 },
+        { "label": "6", "value": 6 },
+        { "label": "7", "value": 7 },
+        { "label": "8", "value": 8 },
+        { "label": "9", "value": 9 },
+        { "label": "10", "value": 10 }
+      ]
+    },
+    {
+      "id": "a100",
+      "name": "A100",
+      "category": "static",
+      "description": "Statische 100er-Scheibe",
+      "input_mode": "number_range",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "id": "b4",
+      "name": "B4",
+      "category": "static",
+      "description": "Schweizer 4er-Wertung",
+      "input_mode": "buttons",
+      "zones": [
+        { "label": "0", "value": 0 },
+        { "label": "1", "value": 1 },
+        { "label": "2", "value": 2 },
+        { "label": "3", "value": 3 },
+        { "label": "4", "value": 4 }
+      ]
+    },
+    {
+      "id": "p10_25m",
+      "name": "P10 25m",
+      "category": "static",
+      "description": "25m Pistolenwertung",
+      "input_mode": "buttons",
+      "zones": [
+        { "label": "0", "value": 0 },
+        { "label": "6", "value": 6 },
+        { "label": "7", "value": 7 },
+        { "label": "8", "value": 8 },
+        { "label": "9", "value": 9 },
+        { "label": "10", "value": 10 }
+      ]
+    },
+    { "id": "ipsc", "name": "IPSC", "category": "dynamic", "description": "IPSC Target" },
+    { "id": "idpa", "name": "IDPA", "category": "dynamic", "description": "IDPA Target" },
+    {
+      "id": "universal_silhouette",
+      "name": "Universelle Mannscheibe",
+      "category": "dynamic",
+      "description": "Universelle dynamische Scheibe ohne festes Scoring"
+    }
+  ],
+  "scoring_methods": [
+    {
+      "id": "points_sum",
+      "name": "Punkte Summe",
+      "category": "static",
+      "result_type": "points",
+      "higher_is_better": true,
+      "uses_time": false,
+      "description": "Addiert alle Trefferwerte."
+    },
+    {
+      "id": "ipsc_minor",
+      "name": "IPSC Minor",
+      "category": "dynamic",
+      "result_type": "hit_factor",
+      "higher_is_better": true,
+      "uses_time": true,
+      "zones": [
+        { "label": "Alpha", "key": "alpha", "value": 5 },
+        { "label": "Charlie", "key": "charlie", "value": 3 },
+        { "label": "Delta", "key": "delta", "value": 1 },
+        { "label": "Miss", "key": "miss", "value": -10 },
+        { "label": "No-Shoot", "key": "no_shoot", "value": -10 }
+      ],
+      "formula": "score / raw_time"
+    },
+    {
+      "id": "ipsc_major",
+      "name": "IPSC Major",
+      "category": "dynamic",
+      "result_type": "hit_factor",
+      "higher_is_better": true,
+      "uses_time": true,
+      "zones": [
+        { "label": "Alpha", "key": "alpha", "value": 5 },
+        { "label": "Charlie", "key": "charlie", "value": 4 },
+        { "label": "Delta", "key": "delta", "value": 2 },
+        { "label": "Miss", "key": "miss", "value": -10 },
+        { "label": "No-Shoot", "key": "no_shoot", "value": -10 }
+      ],
+      "formula": "score / raw_time"
+    },
+    {
+      "id": "idpa_time_plus",
+      "name": "IDPA Time Plus",
+      "category": "dynamic",
+      "result_type": "final_time",
+      "higher_is_better": false,
+      "uses_time": true,
+      "zones": [
+        { "label": "Down 0", "key": "down_0", "penalty_seconds": 0 },
+        { "label": "Down 1", "key": "down_1", "penalty_seconds": 1 },
+        { "label": "Down 3", "key": "down_3", "penalty_seconds": 3 },
+        { "label": "Miss", "key": "miss", "penalty_seconds": 5 },
+        { "label": "Non-Threat", "key": "non_threat", "penalty_seconds": 5 }
+      ],
+      "formula": "raw_time + penalty_seconds"
+    },
+    {
+      "id": "time_plus",
+      "name": "Time Plus",
+      "category": "dynamic",
+      "result_type": "final_time",
+      "higher_is_better": false,
+      "uses_time": true,
+      "zones": [
+        { "label": "Hit", "key": "hit", "penalty_seconds": 0 },
+        { "label": "Miss", "key": "miss", "penalty_seconds": 5 },
+        { "label": "No-Shoot", "key": "no_shoot", "penalty_seconds": 5 }
+      ],
+      "formula": "raw_time + penalty_seconds"
+    },
+    {
+      "id": "points_dynamic",
+      "name": "Dynamische Punkte",
+      "category": "dynamic",
+      "result_type": "points",
+      "higher_is_better": true,
+      "uses_time": false,
+      "zones": [
+        { "label": "Treffer", "key": "hit", "value": 1 },
+        { "label": "Miss", "key": "miss", "value": 0 }
+      ],
+      "formula": "score"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Training erfassen{% endblock %}
+{% block content %}
+<form class="training-form" action="{{ url_for('main.save_training') }}" method="post" data-kind="{{ training.kind }}">
+  {% set score_values = training.get("values", []) %}
+  <input type="hidden" name="kind" value="{{ training.kind }}">
+  <input type="hidden" name="shots" id="shotsInput">
+  <input type="hidden" name="max_value" value="{{ score_values|max if score_values else 0 }}">
+
+  <section class="form-card">
+    <h1>{{ "Statisch" if training.kind == "static" else "Dynamisch" }}</h1>
+    <label>Datum<input type="date" name="date" value="{{ training.date }}" required></label>
+    <label>Name<input name="name" value="{{ training.name }}" required></label>
+    <div class="split">
+      <label>Waffe
+        <select name="weapon_type">
+          <option {{ "selected" if training.weapon_type == "Kurzwaffe" else "" }}>Kurzwaffe</option>
+          <option {{ "selected" if training.weapon_type == "Langwaffe" else "" }}>Langwaffe</option>
+        </select>
+      </label>
+      <label>Distanz<input type="number" min="0" name="distance" value="{{ training.distance }}" required></label>
+    </div>
+    <label>Schüsse<input type="number" min="1" name="shot_count" id="shotCount" value="{{ training.shot_count }}" required></label>
+  </section>
+
+  {% if training.kind == "static" %}
+    <section class="form-card score-pad" data-values="{{ score_values|join(',') }}">
+      <div class="score-top">
+        <div><small>Erfasst</small><strong id="shotProgress">0 / {{ training.shot_count }}</strong></div>
+        <div><small>Total</small><strong id="staticTotal">0</strong></div>
+      </div>
+      <div class="button-grid" id="scoreButtons">
+        {% for value in score_values %}
+          <button type="button" data-score="{{ value }}">{{ value }}</button>
+        {% endfor %}
+      </div>
+      <button class="secondary-action" type="button" id="undoShot">Undo</button>
+      <div class="shot-list" id="shotList"></div>
+    </section>
+  {% else %}
+    <section class="form-card">
+      <div class="split">
+        <label>Scheibe
+          <select name="target_type">
+            {% for target in ["IPSC", "IDPA", "Silhouette", "Custom"] %}
+              <option {{ "selected" if training.target_type == target else "" }}>{{ target }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Zeit<input type="number" step="0.01" min="0" name="time_seconds" id="timeSeconds" value="0"></label>
+      </div>
+      <div class="hit-grid">
+        <label>Alpha<input type="number" min="0" name="alpha" value="0"></label>
+        <label>Charlie<input type="number" min="0" name="charlie" value="0"></label>
+        <label>Delta<input type="number" min="0" name="delta" value="0"></label>
+        <label>Miss<input type="number" min="0" name="misses" value="0"></label>
+        <label>No-Shoot<input type="number" min="0" name="no_shoots" value="0"></label>
+      </div>
+      <div class="score-top">
+        <div><small>Punkte</small><strong id="dynamicPoints">0</strong></div>
+        <div><small>Hit Factor</small><strong id="hitFactor">0.00</strong></div>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="form-card">
+    <label>Notizen<textarea name="notes" rows="4" placeholder="Optional"></textarea></label>
+    <button class="primary-action full" type="submit">Session speichern</button>
+  </section>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/training.js') }}"></script>
+{% endblock %}

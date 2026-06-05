@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}RangeLog Home{% endblock %}
+{% block content %}
+<section class="hero-action">
+  <p class="eyebrow">Training starten</p>
+  <h1>Wähle eine Übung</h1>
+  <div class="hero-buttons">
+    <a class="primary-action" href="{{ url_for('main.exercises') }}">Übung auswählen</a>
+    <a class="secondary-light" href="{{ url_for('main.new_exercise') }}">Neue Übung erstellen</a>
+  </div>
+</section>
+
+<section class="grid stats-grid">
+  <article class="metric"><span>{{ stats.total_exercises }}</span><small>Übungen</small></article>
+  <article class="metric"><span>{{ stats.total_runs }}</span><small>Runs</small></article>
+  <article class="metric"><span>{{ stats.favorites }}</span><small>Favoriten</small></article>
+  <article class="metric"><span>{{ stats.month_runs }}</span><small>Diesen Monat</small></article>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Favoriten</h2>
+    <a href="{{ url_for('main.exercises') }}">Alle</a>
+  </div>
+  <div class="template-list">
+  {% for exercise in favorites %}
+    <a class="template-card" href="{{ url_for('main.exercise_detail', exercise_id=exercise.id) }}">
+      <div><strong>{{ exercise.name }}</strong><span>{{ exercise.weapon_type }} · {{ exercise.distance }} m · {{ exercise.scoring_label }}</span></div>
+      <small>{{ exercise.runs_count }} Runs</small>
+    </a>
+  {% else %}<div class="empty">Noch keine Favoriten - markiere häufige Übungen als Favorit.</div>{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2>Letzte Übungen</h2>
+  <div class="template-list">
+  {% for exercise in recent %}
+    <a class="template-card" href="{{ url_for('main.exercise_detail', exercise_id=exercise.id) }}">
+      <div><strong>{{ exercise.name }}</strong><span>{{ exercise.type|capitalize }} · {{ exercise.weapon_type }}</span></div>
+      <small>{{ exercise.last_run.date if exercise.last_run else "Neu" }}</small>
+    </a>
+  {% else %}<div class="empty">Noch keine Übungen vorhanden - erstelle deine erste Übung.</div>{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <a class="primary-action full" href="{{ url_for('main.new_exercise') }}">Neue Übung erstellen</a>
+</section>
+{% endblock %}

@@ -1,0 +1,119 @@
+{
+  "targets": [
+    {
+      "id": "a10",
+      "name": "A10",
+      "category": "static",
+      "score_type": "points",
+      "higher_is_better": true,
+      "zones": [
+        { "label": "1", "value": 1 },
+        { "label": "2", "value": 2 },
+        { "label": "3", "value": 3 },
+        { "label": "4", "value": 4 },
+        { "label": "5", "value": 5 },
+        { "label": "6", "value": 6 },
+        { "label": "7", "value": 7 },
+        { "label": "8", "value": 8 },
+        { "label": "9", "value": 9 },
+        { "label": "10", "value": 10 }
+      ],
+      "default_scoring_method": "points_sum"
+    },
+    {
+      "id": "a100",
+      "name": "A100",
+      "category": "static",
+      "score_type": "points",
+      "higher_is_better": true,
+      "zones": [{ "label": "100", "value": 100, "generated_range": "1-100" }],
+      "default_scoring_method": "points_sum",
+      "input_mode": "number_range",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "id": "b4",
+      "name": "B4",
+      "category": "static",
+      "score_type": "points",
+      "higher_is_better": true,
+      "zones": [
+        { "label": "0", "value": 0 },
+        { "label": "1", "value": 1 },
+        { "label": "2", "value": 2 },
+        { "label": "3", "value": 3 },
+        { "label": "4", "value": 4 }
+      ],
+      "default_scoring_method": "points_sum"
+    },
+    {
+      "id": "p10_25m",
+      "name": "P10 25m",
+      "category": "static",
+      "score_type": "points",
+      "higher_is_better": true,
+      "zones": [
+        { "label": "0", "value": 0 },
+        { "label": "6", "value": 6 },
+        { "label": "7", "value": 7 },
+        { "label": "8", "value": 8 },
+        { "label": "9", "value": 9 },
+        { "label": "10", "value": 10 }
+      ],
+      "default_scoring_method": "points_sum"
+    },
+    {
+      "id": "ipsc",
+      "name": "IPSC",
+      "category": "dynamic",
+      "score_type": "zones",
+      "higher_is_better": true,
+      "supports_hit_factor": true,
+      "zones": [
+        { "label": "Alpha", "key": "alpha" },
+        { "label": "Charlie", "key": "charlie" },
+        { "label": "Delta", "key": "delta" },
+        { "label": "Miss", "key": "miss" },
+        { "label": "No-Shoot", "key": "no_shoot" }
+      ],
+      "scoring_presets": {
+        "ipsc_minor": {
+          "label": "IPSC Minor",
+          "result_type": "hit_factor",
+          "values": { "alpha": 5, "charlie": 3, "delta": 1, "miss": -10, "no_shoot": -10 }
+        },
+        "ipsc_major": {
+          "label": "IPSC Major",
+          "result_type": "hit_factor",
+          "values": { "alpha": 5, "charlie": 4, "delta": 2, "miss": -10, "no_shoot": -10 }
+        }
+      },
+      "default_scoring_method": "ipsc_minor"
+    },
+    {
+      "id": "idpa",
+      "name": "IDPA",
+      "category": "dynamic",
+      "score_type": "points_down",
+      "higher_is_better": false,
+      "supports_hit_factor": false,
+      "zones": [
+        { "label": "Down 0", "key": "down_0", "penalty_seconds": 0 },
+        { "label": "Down 1", "key": "down_1", "penalty_seconds": 1 },
+        { "label": "Down 3", "key": "down_3", "penalty_seconds": 3 },
+        { "label": "Miss", "key": "miss", "penalty_seconds": 5 },
+        { "label": "Non-Threat", "key": "non_threat", "penalty_seconds": 5 }
+      ],
+      "scoring_presets": {
+        "idpa_time_plus": {
+          "label": "IDPA Time Plus",
+          "result_type": "final_time",
+          "penalty_mode": "seconds",
+          "values": { "down_0": 0, "down_1": 1, "down_3": 3, "miss": 5, "non_threat": 5 }
+        }
+      },
+      "default_scoring_method": "idpa_time_plus"
+    }
+  ]
+}

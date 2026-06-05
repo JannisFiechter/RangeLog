@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<section class="section">
+  <h1>Settings</h1>
+  <div class="grid stats-grid">
+    <article class="metric"><span>{{ counts.exercises }}</span><small>Übungen</small></article>
+    <article class="metric"><span>{{ counts.runs }}</span><small>Runs</small></article>
+    <article class="metric"><span>1.0</span><small>Version</small></article>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Darstellung</h2>
+  <div class="form-card">
+    <label class="check-line theme-toggle">
+      <input type="checkbox" id="themeToggle">
+      Dark Mode
+    </label>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Daten</h2>
+  <div class="settings-actions">
+    <a class="primary-action full" href="{{ url_for('main.api_export_json') }}">JSON exportieren</a>
+    <a class="secondary-action full" href="{{ url_for('main.api_export_csv') }}">CSV exportieren</a>
+    <form action="{{ url_for('main.api_reset') }}" method="post" onsubmit="return confirm('Alle Übungen und Runs werden gelöscht.');">
+      <button class="danger-action" type="submit">Datenbank zurücksetzen</button>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <h2>App</h2>
+  <form action="{{ url_for('main.api_seed_defaults') }}" method="post">
+    <button class="primary-action full" type="submit">Standardübungen neu anlegen</button>
+  </form>
+</section>
+{% endblock %}

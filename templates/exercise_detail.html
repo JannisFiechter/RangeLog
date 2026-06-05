@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ exercise.name }}{% endblock %}
+{% block content %}
+<section class="section detail">
+  <a class="back-link" href="{{ url_for('main.exercises') }}">Zurück</a>
+  <h1>{{ exercise.name }}</h1>
+  <p class="notes">{{ exercise.description or "Keine Beschreibung." }}</p>
+  <div class="detail-grid">
+    <div><small>Typ</small><strong>{{ exercise.type|capitalize }}</strong></div>
+    <div><small>Waffe</small><strong>{{ exercise.weapon_type }}</strong></div>
+    <div><small>Distanz</small><strong>{{ exercise.distance }} m</strong></div>
+    <div><small>Scoring</small><strong>{{ exercise.scoring_label }}</strong></div>
+  </div>
+  <div class="action-row">
+    <a class="primary-action full" href="{{ url_for('main.run_form', exercise_id=exercise.id) }}">Neuen Run erfassen</a>
+    <a class="secondary-action compact" href="{{ url_for('main.edit_exercise', exercise_id=exercise.id) }}">Bearbeiten</a>
+  </div>
+</section>
+
+<section class="grid stats-grid">
+  <article class="metric"><span>{{ exercise.best_run|result(exercise) if exercise.best_run else "—" }}</span><small>Bester Run</small></article>
+  <article class="metric"><span>{{ exercise.average }}</span><small>Durchschnitt</small></article>
+  <article class="metric"><span>{{ exercise.last_run|result(exercise) if exercise.last_run else "—" }}</span><small>Letzter Run</small></article>
+  <article class="metric"><span>{{ exercise.trend_percent if exercise.trend_percent is not none else "—" }}{% if exercise.trend_percent is not none %}%{% endif %}</span><small>Veränderung</small></article>
+</section>
+
+<section class="section">
+  <h2>Analyse</h2>
+  <div class="chart-wrap">
+    <canvas class="metric-chart" width="640" height="340" data-chart='{{ exercise.chart|tojson }}'></canvas>
+    <p class="chart-note">{{ exercise.chart.explanation }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Letzte Runs</h2>
+  <div class="history-list">
+    {% for run in runs %}
+      <a class="session-card" href="{{ url_for('main.run_detail', session_id=run.id) }}">
+        <div><strong>{{ run.date }}</strong><span>{{ run.notes or "Run" }}</span></div>
+        <b>{{ run|result(exercise) }}</b>
+      </a>
+    {% else %}
+      <div class="empty">Noch keine Runs erfasst.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+{% endblock %}

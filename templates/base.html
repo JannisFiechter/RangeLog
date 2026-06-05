@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (() => {
+      const stored = localStorage.getItem("rangelog-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <title>{% block title %}RangeLog{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('main.manifest') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('main.index') }}">RangeLog</a>
+  </header>
+
+  <main class="shell">
+    {% block content %}{% endblock %}
+  </main>
+
+  <nav class="bottom-nav" aria-label="Hauptnavigation">
+    <a class="{{ 'active' if active == 'home' else '' }}" href="{{ url_for('main.index') }}"><span>Home</span></a>
+    <a class="{{ 'active' if active == 'exercises' else '' }}" href="{{ url_for('main.exercises') }}"><span>Übungen</span></a>
+    <a class="{{ 'active' if active == 'history' else '' }}" href="{{ url_for('main.history') }}"><span>History</span></a>
+    <a class="{{ 'active' if active == 'stats' else '' }}" href="{{ url_for('main.stats') }}"><span>Analyse</span></a>
+    <a class="{{ 'active' if active == 'settings' else '' }}" href="{{ url_for('main.settings') }}"><span>Settings</span></a>
+  </nav>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

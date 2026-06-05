@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+{% if sessions is not none %}
+<section class="section">
+  <h1>History</h1>
+  <div class="filter-row" data-filter-group>
+    <button class="active" data-filter="all">Alle</button>
+    <button data-filter="static">Statisch</button>
+    <button data-filter="dynamic">Dynamisch</button>
+    <button data-filter="Kurzwaffe">Kurzwaffe</button>
+    <button data-filter="Langwaffe">Langwaffe</button>
+  </div>
+  <div class="history-list">
+    {% for item in sessions %}
+      <a class="session-card" data-kind="{{ item.kind }}" data-weapon="{{ item.weapon_type }}" href="{{ url_for('main.session_detail', session_id=item.id) }}">
+        <div>
+          <strong>{{ item.name }}</strong>
+          <span>{{ item.date }} · {{ item.weapon_type }}</span>
+        </div>
+        <b>
+          {% if item.kind == 'static' %}
+            {{ item.total_points }} P · {{ "%.1f"|format(item.percentage) }}%
+          {% else %}
+            {{ "%.2f"|format(item.time_seconds) }} s · HF {{ "%.2f"|format(item.hit_factor) }}
+          {% endif %}
+        </b>
+      </a>
+    {% else %}
+      <div class="empty">Keine Sessions vorhanden.</div>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="section detail">
+  <a class="back-link" href="{{ url_for('main.history') }}">Zurück</a>
+  <h1>{{ session.name }}</h1>
+  <div class="detail-grid">
+    <div><small>Datum</small><strong>{{ session.date }}</strong></div>
+    <div><small>Waffe</small><strong>{{ session.weapon_type }}</strong></div>
+    <div><small>Distanz</small><strong>{{ session.distance }} m</strong></div>
+    <div><small>Schüsse</small><strong>{{ session.shot_count }}</strong></div>
+    {% if session.kind == "static" %}
+      <div><small>Punkte</small><strong>{{ session.total_points }} / {{ session.max_points }}</strong></div>
+      <div><small>Prozent</small><strong>{{ "%.1f"|format(session.percentage) }}%</strong></div>
+    {% else %}
+      <div><small>Zeit</small><strong>{{ "%.2f"|format(session.time_seconds) }} s</strong></div>
+      <div><small>Hit Factor</small><strong>{{ "%.2f"|format(session.hit_factor) }}</strong></div>
+    {% endif %}
+  </div>
+
+  {% if session.kind == "static" %}
+    <h2>Schüsse</h2>
+    <div class="shot-list visible">
+      {% for shot in session.shots %}<span>{{ shot }}</span>{% endfor %}
+    </div>
+  {% else %}
+    <h2>Treffer</h2>
+    <div class="detail-grid">
+      {% for zone, count in session.hits.items() %}
+        <div><small>{{ zone }}</small><strong>{{ count }}</strong></div>
+      {% endfor %}
+      <div><small>Miss</small><strong>{{ session.misses }}</strong></div>
+      <div><small>No-Shoot</small><strong>{{ session.no_shoots }}</strong></div>
+      <div><small>Punkte</small><strong>{{ session.total_points }}</strong></div>
+    </div>
+  {% endif %}
+
+  <h2>Notizen</h2>
+  <p class="notes">{{ session.notes or "Keine Notizen." }}</p>
+  <form action="{{ url_for('main.delete_session_route', session_id=session.id) }}" method="post">
+    <button class="danger-action" type="submit">Löschen</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

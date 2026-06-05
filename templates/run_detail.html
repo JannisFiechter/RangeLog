@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Run{% endblock %}
+{% block content %}
+<section class="section detail">
+  <a class="back-link" href="{{ url_for('main.exercise_detail', exercise_id=exercise.id) }}">Zurück</a>
+  <h1>{{ exercise.name }}</h1>
+  <div class="detail-grid">
+    <div><small>Datum</small><strong>{{ session.date }}</strong></div>
+    <div><small>Ergebnis</small><strong>{{ session|result(exercise) }}</strong></div>
+    {% if session.percentage is not none %}<div><small>Prozent</small><strong>{{ "%.1f"|format(session.percentage) }}%</strong></div>{% endif %}
+    <div><small>Übung</small><strong>{{ exercise.name }}</strong></div>
+    {% if session.raw_time is not none %}<div><small>Raw Time</small><strong>{{ "%.2f"|format(session.raw_time) }} s</strong></div>{% endif %}
+    {% if session.penalty_time is not none %}<div><small>Penalty</small><strong>{{ "%.2f"|format(session.penalty_time) }} s</strong></div>{% endif %}
+  </div>
+  {% if exercise.type == "static" %}
+    <h2>Schüsse</h2>
+    <div class="shot-list compact-shot-row">{% for shot in session.shot_entries %}<span title="{{ shot.phase_name }}">{{ shot.value|int if shot.value == shot.value|int else shot.value }}</span>{% endfor %}</div>
+    <div class="block-list">
+      {% for block in blocks %}
+        <article class="block-card">
+          <div class="section-head">
+            <h2>{{ block.title }}</h2>
+            <small>{{ block.shots|length }} Schüsse</small>
+          </div>
+          <div class="shot-list">{% for shot in block.shots %}<span>{{ shot.value|int if shot.value == shot.value|int else shot.value }}</span>{% endfor %}</div>
+          <div class="score-top">
+            <div><small>Summe</small><strong>{{ block["sum"]|int if block["sum"] == block["sum"]|int else "%.1f"|format(block["sum"]) }}</strong></div>
+            <div><small>Ø</small><strong>{{ "%.2f"|format(block["average"]) }}</strong></div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <h2>Treffer</h2>
+    <div class="detail-grid">
+      {% for zone, count in session.hits.items() %}
+        <div><small>{{ zone }}</small><strong>{{ count }}</strong></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <h2>Notizen</h2>
+  <p class="notes">{{ session.notes or "Keine Notizen." }}</p>
+  <form action="{{ url_for('main.delete_session_route', session_id=session.id) }}" method="post">
+    <button class="danger-action" type="submit">Run löschen</button>
+  </form>
+</section>
+{% endblock %}

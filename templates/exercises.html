@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Übungen{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-head">
+    <h1>Übungen</h1>
+    <a class="small-action" href="{{ url_for('main.new_exercise') }}">Neue Übung</a>
+  </div>
+  <div class="filter-row" data-filter-group>
+    <button class="active" data-filter="all">Alle</button>
+    <button data-filter="static">Statisch</button>
+    <button data-filter="dynamic">Dynamisch</button>
+    <button data-filter="Kurzwaffe">Kurzwaffe</button>
+    <button data-filter="Langwaffe">Langwaffe</button>
+  </div>
+  <div class="history-list">
+    {% for exercise in exercises %}
+      <a class="exercise-card" data-kind="{{ exercise.type }}" data-weapon="{{ exercise.weapon_type }}" href="{{ url_for('main.exercise_detail', exercise_id=exercise.id) }}">
+        <div class="exercise-main">
+          <strong>{{ exercise.name }}</strong>
+          <span>{{ exercise.type|capitalize }} · {{ exercise.weapon_type }} · {{ exercise.distance }} m</span>
+          <span>{{ exercise.scoring_label }} · {{ exercise.shots_count }} Schüsse</span>
+        </div>
+        <div class="exercise-meta">
+          <b>{{ exercise.runs_count }}</b><small>Runs</small>
+          <b>{{ exercise.best_run|result(exercise) if exercise.best_run else "—" }}</b><small>Bester</small>
+        </div>
+      </a>
+    {% else %}
+      <div class="empty">Keine Übungen vorhanden - starte mit einer neuen Übung.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
