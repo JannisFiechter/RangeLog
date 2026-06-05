@@ -9,13 +9,28 @@ cd rangelog
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python app.py
+python run.py
 ```
 
 Danach im Browser öffnen:
 
 ```text
 http://127.0.0.1:5000
+```
+
+## PythonAnywhere WSGI
+
+Die Datei `app.py` wurde bewusst entfernt, damit sie nicht mit dem Package `app/` kollidiert.
+In der PythonAnywhere WSGI-Datei:
+
+```python
+import sys
+
+path = "/home/SHRUUM/RangeLog"
+if path not in sys.path:
+    sys.path.insert(0, path)
+
+from wsgi import application
 ```
 
 ## Funktionen
