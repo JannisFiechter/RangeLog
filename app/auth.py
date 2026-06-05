@@ -109,11 +109,15 @@ def change_password():
         return redirect(url_for("auth.login"))
     current_password = request.form.get("current_password") or ""
     new_password = request.form.get("new_password") or ""
+    new_password_confirm = request.form.get("new_password_confirm") or ""
     if not check_password_hash(current_user.password_hash, current_password):
         flash("Aktuelles Passwort ist falsch.", "error")
         return redirect(url_for("main.settings"))
     if not new_password:
         flash("Bitte neues Passwort angeben.", "error")
+        return redirect(url_for("main.settings"))
+    if new_password != new_password_confirm:
+        flash("Die neuen Passwörter stimmen nicht überein.", "error")
         return redirect(url_for("main.settings"))
     get_db().execute(
         "UPDATE users SET password_hash = ? WHERE id = ?",
