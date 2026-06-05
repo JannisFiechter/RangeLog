@@ -21,20 +21,36 @@
 </section>
 
 <section class="section">
-  <h2>Daten</h2>
-  <div class="settings-actions">
-    <a class="primary-action full" href="{{ url_for('main.api_export_json') }}">JSON exportieren</a>
-    <a class="secondary-action full" href="{{ url_for('main.api_export_csv') }}">CSV exportieren</a>
-    <form action="{{ url_for('main.api_reset') }}" method="post" onsubmit="return confirm('Alle Übungen und Runs werden gelöscht.');">
-      <button class="danger-action" type="submit">Datenbank zurücksetzen</button>
-    </form>
-  </div>
-</section>
-
-<section class="section">
   <h2>App</h2>
   <form action="{{ url_for('main.api_seed_defaults') }}" method="post">
     <button class="primary-action full" type="submit">Standardübungen neu anlegen</button>
+  </form>
+  <a class="secondary-action full" href="{{ url_for('auth.logout') }}">Logout</a>
+</section>
+
+<section class="section">
+  <h2>Account</h2>
+  <div class="settings-actions">
+    <form class="form-card" action="{{ url_for('auth.change_email') }}" method="post">
+      <label>E-Mail
+        <input type="email" name="email" value="{{ current_user.email or '' }}" placeholder="optional">
+      </label>
+      <button class="secondary-action full" type="submit">E-Mail speichern</button>
+    </form>
+
+    <form class="form-card" action="{{ url_for('auth.change_password') }}" method="post">
+      <label>Aktuelles Passwort
+        <input type="password" name="current_password" autocomplete="current-password" required>
+      </label>
+      <label>Neues Passwort
+        <input type="password" name="new_password" autocomplete="new-password" required>
+      </label>
+      <button class="secondary-action full" type="submit">Passwort ändern</button>
+    </form>
+  </div>
+
+  <form action="{{ url_for('auth.delete_account') }}" method="post" onsubmit="return confirm('Dein Account und alle deine Übungen und Runs werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.');">
+    <button class="danger-action" type="submit">Account löschen</button>
   </form>
 </section>
 {% endblock %}

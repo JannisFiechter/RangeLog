@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Registrieren{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="form-card auth-card">
+    <p class="eyebrow">Neues Konto</p>
+    <h1>Registrieren</h1>
+    {% if error %}<p class="notes auth-error">{{ error }}</p>{% endif %}
+    <form class="training-form" method="post">
+      <label>Username
+        <input name="username" autocomplete="username" required>
+      </label>
+      <label>E-Mail optional
+        <input type="email" name="email" autocomplete="email">
+      </label>
+      <label>Passwort
+        <input type="password" name="password" autocomplete="new-password" required>
+      </label>
+      <button class="primary-action full" type="submit">Konto erstellen</button>
+    </form>
+    <p class="auth-switch">Schon registriert? <a href="{{ url_for('auth.login') }}">Einloggen</a></p>
+  </div>
+</section>
+{% endblock %}

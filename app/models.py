@@ -3,11 +3,16 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from flask import current_app
+from flask_login import current_user
 
 from .database import get_db
 
 
 FALLBACK_SCORING = {"targets": [], "scoring_methods": []}
+
+
+def current_user_id():
+    return int(current_user.id)
 
 
 def scoring_path():
@@ -225,7 +230,7 @@ def session_to_json(row):
 
 def seed_default_exercises():
     db = get_db()
-    count = db.execute("SELECT COUNT(*) AS count FROM exercises").fetchone()["count"]
+    count = db.execute("SELECT COUNT(*) AS count FROM exercises WHERE user_id = ?", (current_user_id(),)).fetchone()["count"]
     if count:
         return
     for name, kind, weapon, distance, shots, target_id, method, flow, favorite in DEFAULT_EXERCISES:
@@ -235,7 +240,9 @@ def seed_default_exercises():
 def seed_missing_default_exercises():
     created = 0
     for name, kind, weapon, distance, shots, target_id, method, flow, favorite in DEFAULT_EXERCISES:
-        exists = get_db().execute("SELECT id FROM exercises WHERE name = ?", (name,)).fetchone()
+        exists = get_db().execute(
+            "SELECT id FROM exercises WHERE name = ? AND user_id = ?", (name, current_user_id())
+        ).fetchone()
         if not exists:
             create_default_exercise(name, kind, weapon, distance, shots, target_id, method, flow, favorite)
             created += 1
@@ -269,14 +276,14 @@ def create_exercise(data):
     cursor = db.execute(
         """
         INSERT INTO exercises (
-            name, type, weapon_type, distance, shots_count, target_id, target_type,
+            user_id, name, type, weapon_type, distance, shots_count, target_id, target_type,
             flow_type, scoring_method_id, scoring_method, scoring_config_json, static_values_json,
             description, is_favorite
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            data["name"], data["type"], data["weapon_type"], data["distance"], data["shots_count"],
+            current_user_id(), data["name"], data["type"], data["weapon_type"], data["distance"], data["shots_count"],
             data.get("target_id"), data.get("target_type", ""), data.get("flow_type", "standard"),
             data.get("scoring_method_id") or data["scoring_method"],
             data["scoring_method"], json.dumps(data.get("scoring_config", {})), json.dumps(data.get("static_values", [])),
@@ -295,31 +302,35 @@ def update_exercise(exercise_id, data):
             target_id = ?, target_type = ?, flow_type = ?, scoring_method_id = ?, scoring_method = ?,
             scoring_config_json = ?, static_values_json = ?, description = ?,
             is_favorite = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
+        WHERE id = ? AND user_id = ?
         """,
         (
             data["name"], data["type"], data["weapon_type"], data["distance"], data["shots_count"],
             data.get("target_id"), data.get("target_type", ""), data.get("flow_type", "standard"),
             data.get("scoring_method_id") or data["scoring_method"],
             data["scoring_method"], json.dumps(data.get("scoring_config", {})), json.dumps(data.get("static_values", [])),
-            data.get("description", ""), int(data.get("is_favorite", 0)), exercise_id,
+            data.get("description", ""), int(data.get("is_favorite", 0)), exercise_id, current_user_id(),
         ),
     )
     get_db().commit()
 
 
 def delete_exercise(exercise_id):
-    get_db().execute("DELETE FROM exercises WHERE id = ?", (exercise_id,))
+    get_db().execute("DELETE FROM exercises WHERE id = ? AND user_id = ?", (exercise_id, current_user_id()))
     get_db().commit()
 
 
 def get_exercise(exercise_id):
-    row = get_db().execute("SELECT * FROM exercises WHERE id = ?", (exercise_id,)).fetchone()
+    row = get_db().execute(
+        "SELECT * FROM exercises WHERE id = ? AND user_id = ?", (exercise_id, current_user_id())
+    ).fetchone()
     return with_exercise_stats(exercise_to_json(row)) if row else None
 
 
 def all_exercises():
-    rows = get_db().execute("SELECT * FROM exercises ORDER BY is_favorite DESC, name").fetchall()
+    rows = get_db().execute(
+        "SELECT * FROM exercises WHERE user_id = ? ORDER BY is_favorite DESC, name", (current_user_id(),)
+    ).fetchall()
     return [with_exercise_stats(exercise_to_json(row)) for row in rows]
 
 
@@ -327,10 +338,11 @@ def recent_exercises(limit=4):
     rows = get_db().execute(
         """
         SELECT e.*, MAX(COALESCE(s.date, e.updated_at)) AS sort_date
-        FROM exercises e LEFT JOIN sessions s ON s.exercise_id = e.id
+        FROM exercises e LEFT JOIN sessions s ON s.exercise_id = e.id AND s.user_id = ?
+        WHERE e.user_id = ?
         GROUP BY e.id ORDER BY sort_date DESC LIMIT ?
         """,
-        (limit,),
+        (current_user_id(), current_user_id(), limit),
     ).fetchall()
     return [with_exercise_stats(exercise_to_json(row)) for row in rows]
 
@@ -340,8 +352,8 @@ def favorite_exercises():
 
 
 def sessions_for_exercise(exercise_id, limit=None):
-    sql = "SELECT * FROM sessions WHERE exercise_id = ? ORDER BY date DESC, id DESC"
-    params = [exercise_id]
+    sql = "SELECT * FROM sessions WHERE exercise_id = ? AND user_id = ? ORDER BY date DESC, id DESC"
+    params = [exercise_id, current_user_id()]
     if limit:
         sql += " LIMIT ?"
         params.append(limit)
@@ -353,9 +365,10 @@ def latest_sessions(limit=20):
         """
         SELECT s.*, e.name AS exercise_name, e.type AS exercise_type, e.weapon_type
         FROM sessions s JOIN exercises e ON e.id = s.exercise_id
+        WHERE s.user_id = ?
         ORDER BY s.date DESC, s.id DESC LIMIT ?
         """,
-        (limit,),
+        (current_user_id(), limit),
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -438,28 +451,22 @@ def dashboard_stats():
     db = get_db()
     month = date.today().isoformat()[:7]
     return {
-        "total_runs": db.execute("SELECT COUNT(*) AS count FROM sessions").fetchone()["count"],
-        "total_exercises": db.execute("SELECT COUNT(*) AS count FROM exercises").fetchone()["count"],
-        "favorites": db.execute("SELECT COUNT(*) AS count FROM exercises WHERE is_favorite = 1").fetchone()["count"],
-        "month_runs": db.execute("SELECT COUNT(*) AS count FROM sessions WHERE substr(date, 1, 7) = ?", (month,)).fetchone()["count"],
+        "total_runs": db.execute("SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?", (current_user_id(),)).fetchone()["count"],
+        "total_exercises": db.execute("SELECT COUNT(*) AS count FROM exercises WHERE user_id = ?", (current_user_id(),)).fetchone()["count"],
+        "favorites": db.execute("SELECT COUNT(*) AS count FROM exercises WHERE is_favorite = 1 AND user_id = ?", (current_user_id(),)).fetchone()["count"],
+        "month_runs": db.execute(
+            "SELECT COUNT(*) AS count FROM sessions WHERE substr(date, 1, 7) = ? AND user_id = ?",
+            (month, current_user_id()),
+        ).fetchone()["count"],
     }
 
 
 def app_counts():
     db = get_db()
     return {
-        "exercises": db.execute("SELECT COUNT(*) AS count FROM exercises").fetchone()["count"],
-        "runs": db.execute("SELECT COUNT(*) AS count FROM sessions").fetchone()["count"],
+        "exercises": db.execute("SELECT COUNT(*) AS count FROM exercises WHERE user_id = ?", (current_user_id(),)).fetchone()["count"],
+        "runs": db.execute("SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?", (current_user_id(),)).fetchone()["count"],
     }
-
-
-def reset_all_data():
-    db = get_db()
-    db.execute("DELETE FROM dynamic_hits")
-    db.execute("DELETE FROM shot_entries")
-    db.execute("DELETE FROM sessions")
-    db.execute("DELETE FROM exercises")
-    db.commit()
 
 
 def create_session_for_exercise(exercise, form):
@@ -571,11 +578,11 @@ def insert_session(exercise_id, form, data, shots=None, hits=None, exercise=None
     cursor = db.execute(
         """
         INSERT INTO sessions (
-            exercise_id, date, raw_time, penalty_time, final_time, total_score,
+            user_id, exercise_id, date, raw_time, penalty_time, final_time, total_score,
             max_score, percentage, hit_factor, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (exercise_id, form.get("date") or date.today().isoformat(), data.get("raw_time"), data.get("penalty_time"),
+        (current_user_id(), exercise_id, form.get("date") or date.today().isoformat(), data.get("raw_time"), data.get("penalty_time"),
          data.get("final_time"), data.get("total_score"), data.get("max_score"), data.get("percentage"),
          data.get("hit_factor"), form.get("notes", "")),
     )
@@ -604,14 +611,18 @@ def insert_session(exercise_id, form, data, shots=None, hits=None, exercise=None
 
 def get_session(session_id):
     row = get_db().execute(
-        "SELECT s.*, e.name AS exercise_name, e.type AS exercise_type FROM sessions s JOIN exercises e ON e.id = s.exercise_id WHERE s.id = ?",
-        (session_id,),
+        """
+        SELECT s.*, e.name AS exercise_name, e.type AS exercise_type
+        FROM sessions s JOIN exercises e ON e.id = s.exercise_id
+        WHERE s.id = ? AND s.user_id = ? AND e.user_id = ?
+        """,
+        (session_id, current_user_id(), current_user_id()),
     ).fetchone()
     return session_to_json(row) if row else None
 
 
 def delete_session(session_id):
-    get_db().execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+    get_db().execute("DELETE FROM sessions WHERE id = ? AND user_id = ?", (session_id, current_user_id()))
     get_db().commit()
 
 

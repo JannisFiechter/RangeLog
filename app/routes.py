@@ -2,7 +2,8 @@ import csv
 import io
 from datetime import date
 
-from flask import Blueprint, Response, abort, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask import Blueprint, Response, abort, current_app, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask_login import current_user
 
 from .models import (
     all_scoring_methods,
@@ -22,7 +23,6 @@ from .models import (
     get_session,
     latest_sessions,
     recent_exercises,
-    reset_all_data,
     scoring_payload,
     scoring_presets,
     seed_missing_default_exercises,
@@ -33,6 +33,15 @@ from .models import (
 from .database import get_db
 
 bp = Blueprint("main", __name__)
+
+
+@bp.before_request
+def require_login():
+    if request.endpoint in {"main.manifest", "main.service_worker"}:
+        return None
+    if not current_user.is_authenticated:
+        return current_app.login_manager.unauthorized()
+    return None
 
 
 @bp.app_template_filter("result")
@@ -163,10 +172,32 @@ def api_scoring():
 def api_export_json():
     db = get_db()
     payload = {
-        "exercises": [dict(row) for row in db.execute("SELECT * FROM exercises ORDER BY id").fetchall()],
-        "sessions": [dict(row) for row in db.execute("SELECT * FROM sessions ORDER BY id").fetchall()],
-        "shot_entries": [dict(row) for row in db.execute("SELECT * FROM shot_entries ORDER BY session_id, shot_number").fetchall()],
-        "dynamic_hits": [dict(row) for row in db.execute("SELECT * FROM dynamic_hits ORDER BY session_id, id").fetchall()],
+        "exercises": [dict(row) for row in db.execute("SELECT * FROM exercises WHERE user_id = ? ORDER BY id", (current_user.id,)).fetchall()],
+        "sessions": [dict(row) for row in db.execute("SELECT * FROM sessions WHERE user_id = ? ORDER BY id", (current_user.id,)).fetchall()],
+        "shot_entries": [
+            dict(row)
+            for row in db.execute(
+                """
+                SELECT se.* FROM shot_entries se
+                JOIN sessions s ON s.id = se.session_id
+                WHERE s.user_id = ?
+                ORDER BY se.session_id, se.shot_number
+                """,
+                (current_user.id,),
+            ).fetchall()
+        ],
+        "dynamic_hits": [
+            dict(row)
+            for row in db.execute(
+                """
+                SELECT dh.* FROM dynamic_hits dh
+                JOIN sessions s ON s.id = dh.session_id
+                WHERE s.user_id = ?
+                ORDER BY dh.session_id, dh.id
+                """,
+                (current_user.id,),
+            ).fetchall()
+        ],
     }
     return Response(
         jsonify(payload).get_data(as_text=True),
@@ -185,9 +216,10 @@ def api_export_csv():
             s.total_score, s.max_score, s.percentage, s.raw_time, s.penalty_time,
             s.final_time, s.hit_factor, s.notes
         FROM sessions s JOIN exercises e ON e.id = s.exercise_id
+        WHERE s.user_id = ? AND e.user_id = ?
         ORDER BY s.date, s.id
         """
-    ).fetchall()
+    , (current_user.id, current_user.id)).fetchall()
     output = io.StringIO()
     fieldnames = [
         "session_id", "date", "exercise_name", "exercise_type", "weapon_type", "distance",
@@ -203,12 +235,6 @@ def api_export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=rangelog-sessions.csv"},
     )
-
-
-@bp.route("/api/reset", methods=["POST"])
-def api_reset():
-    reset_all_data()
-    return redirect(url_for("main.settings"))
 
 
 @bp.route("/api/seed-defaults", methods=["POST"])

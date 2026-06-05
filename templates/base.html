@@ -18,19 +18,33 @@
 <body>
   <header class="topbar">
     <a class="brand" href="{{ url_for('main.index') }}">RangeLog</a>
+    {% if current_user.is_authenticated %}
+      <span class="user-chip">{{ current_user.username }}</span>
+    {% endif %}
   </header>
 
   <main class="shell">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list">
+          {% for category, message in messages %}
+            <div class="notes flash-message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
   </main>
 
-  <nav class="bottom-nav" aria-label="Hauptnavigation">
-    <a class="{{ 'active' if active == 'home' else '' }}" href="{{ url_for('main.index') }}"><span>Home</span></a>
-    <a class="{{ 'active' if active == 'exercises' else '' }}" href="{{ url_for('main.exercises') }}"><span>Übungen</span></a>
-    <a class="{{ 'active' if active == 'history' else '' }}" href="{{ url_for('main.history') }}"><span>History</span></a>
-    <a class="{{ 'active' if active == 'stats' else '' }}" href="{{ url_for('main.stats') }}"><span>Analyse</span></a>
-    <a class="{{ 'active' if active == 'settings' else '' }}" href="{{ url_for('main.settings') }}"><span>Settings</span></a>
-  </nav>
+  {% if current_user.is_authenticated %}
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <a class="{{ 'active' if active == 'home' else '' }}" href="{{ url_for('main.index') }}"><span>Home</span></a>
+      <a class="{{ 'active' if active == 'exercises' else '' }}" href="{{ url_for('main.exercises') }}"><span>Übungen</span></a>
+      <a class="{{ 'active' if active == 'history' else '' }}" href="{{ url_for('main.history') }}"><span>History</span></a>
+      <a class="{{ 'active' if active == 'stats' else '' }}" href="{{ url_for('main.stats') }}"><span>Analyse</span></a>
+      <a class="{{ 'active' if active == 'settings' else '' }}" href="{{ url_for('main.settings') }}"><span>Settings</span></a>
+    </nav>
+  {% endif %}
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% block scripts %}{% endblock %}

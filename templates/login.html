@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="form-card auth-card">
+    <p class="eyebrow">Willkommen zurück</p>
+    <h1>Login</h1>
+    {% if error %}<p class="notes auth-error">{{ error }}</p>{% endif %}
+    <form class="training-form" method="post">
+      <label>Username oder E-Mail
+        <input name="login" autocomplete="username" required>
+      </label>
+      <label>Passwort
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="primary-action full" type="submit">Einloggen</button>
+    </form>
+    <p class="auth-switch">Noch kein Konto? <a href="{{ url_for('auth.register') }}">Registrieren</a></p>
+  </div>
+</section>
+{% endblock %}
